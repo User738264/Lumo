@@ -37,7 +37,7 @@ dotnet run --project src/Lumo.Cli -- examples/sample.lumo
 ## Анализ покрытия кода тестами
 
 ```bash
-# Однократная установка инструментов из .config/dotnet-tools.json
+# Однократное восстановление локальных инструментов из dotnet-tools.json
 dotnet tool restore
 
 scripts/run-tests-with-coverage
