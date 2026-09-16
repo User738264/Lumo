@@ -1,0 +1,38 @@
+// Пример программы на языке Lumo для проверки лексического анализатора.
+
+struct Point {
+    x: int;
+    y: int;
+}
+
+/* Возвращает факториал числа n.
+   Блочные комментарии не вкладываются друг в друга. */
+func factorial(n: int) -> int {
+    var result: int = 1;
+    var i: int = 2;
+    while (i <= n) {
+        result = result * i;
+        i = i + 1;
+    }
+
+    return result;
+}
+
+func main() -> int {
+    var n: int = read_int();
+    if (n < 0 || n > 20) {
+        print_string("Ожидается число от 0 до 20\n");
+        return 1;
+    }
+
+    print_string("n! =\t");
+    print_int(factorial(n));
+    print_string("\n");
+
+    var origin: Point;
+    origin.x = 0;
+    origin.y = 0;
+    print_bool(origin.x == origin.y && !false);
+
+    return 0;
+}

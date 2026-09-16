@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace ExampleLib.UnitTests.Helpers;
+namespace Lumo.Lexing.UnitTests.Helpers;
 
 /// <summary>
 ///  Представляет временный файл, создаваемый на время работы теста.

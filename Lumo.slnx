@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Lumo.Lexing/Lumo.Lexing.csproj" />
+    <Project Path="src/Lumo.Cli/Lumo.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Lumo.Lexing.UnitTests/Lumo.Lexing.UnitTests.csproj" />
+  </Folder>
+</Solution>
