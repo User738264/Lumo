@@ -294,6 +294,12 @@ public sealed class Lexer
             Advance();
         }
 
+        // Литерал не может сливаться с последующим идентификатором, например в записи "12abc".
+        if (IsIdentifierStart(Peek()))
+        {
+            throw new LexicalErrorException("после целочисленного литерала не может сразу следовать буква или '_'", start);
+        }
+
         string lexeme = _text[begin.._position];
         if (startsWithZero && lexeme.Length > 1)
         {

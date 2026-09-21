@@ -12,7 +12,6 @@
 - [x] `Can_read_identifier` — однобуквенные идентификаторы, подчёркивания, цифры после первой позиции и длинные имена
 - [x] `Treats_identifiers_as_case_sensitive` — `sum`, `Sum`, `SUM`
 - [x] `Stops_identifier_on_first_foreign_character` — `abc+def`
-- [x] `Reads_digits_before_letters_as_separate_tokens` — `12abc`
 - [x] `Rejects_non_latin_letters_in_identifier` — кириллический идентификатор
 
 ## `LexerKeywordTests`
@@ -24,7 +23,8 @@
 ## `LexerIntLiteralTests`
 
 - [x] `Can_read_int_literal` — корректные значения от `0` до `9223372036854775807`
-- [x] `Rejects_invalid_int_literal` — ведущие нули и переполнение `long`
+- [x] `Rejects_invalid_int_literal` — ведущие нули, переполнение `long`, буква или `_` сразу после литерала (`12abc`, `0x`, `1_000`, `7_`, `007abc`)
+- [x] `Reads_literal_separated_from_identifier` — литерал и идентификатор, разделённые пробелом, оператором или комментарием
 - [x] `Reads_minus_before_literal_as_separate_token` — `-5` разбирается как `Minus` и `IntLiteral`
 
 ## `LexerStringLiteralTests`

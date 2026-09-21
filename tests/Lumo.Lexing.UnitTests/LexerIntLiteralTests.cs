@@ -1,4 +1,5 @@
 using Lumo.Lexing.UnitTests.Helpers;
+
 using Xunit;
 
 namespace Lumo.Lexing.UnitTests;
@@ -33,6 +34,15 @@ public class LexerIntLiteralTests
             // Значение не помещается в тип int.
             { "9223372036854775808", "целочисленный литерал выходит за пределы типа int" },
             { "99999999999999999999999", "целочисленный литерал выходит за пределы типа int" },
+
+            // Буква или подчёркивание сразу после литерала.
+            { "12abc", "после целочисленного литерала не может сразу следовать буква или '_'" },
+            { "0x", "после целочисленного литерала не может сразу следовать буква или '_'" },
+            { "1_000", "после целочисленного литерала не может сразу следовать буква или '_'" },
+            { "7_", "после целочисленного литерала не может сразу следовать буква или '_'" },
+
+            // Слитная запись проверяется раньше ведущих нулей.
+            { "007abc", "после целочисленного литерала не может сразу следовать буква или '_'" },
         };
     }
 
@@ -54,6 +64,30 @@ public class LexerIntLiteralTests
         LexicalErrorException error = LexerRunner.Error(source);
 
         Assert.Equal(expectedDescription, error.Description);
+    }
+
+    public static TheoryData<string, string> LiteralFollowedBySeparatorCases()
+    {
+        return new TheoryData<string, string>
+        {
+            // Пробел отделяет литерал от идентификатора.
+            { "12 abc", "IntLiteral Identifier" },
+
+            // Оператор отделяет литерал от идентификатора.
+            { "12+abc", "IntLiteral Plus Identifier" },
+
+            // Комментарий отделяет литерал от идентификатора.
+            { "12/**/abc", "IntLiteral Identifier" },
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(LiteralFollowedBySeparatorCases))]
+    public void Reads_literal_separated_from_identifier(string source, string expectedTypes)
+    {
+        string actualTypes = LexerRunner.TokenTypeNames(source);
+
+        Assert.Equal(expectedTypes, actualTypes);
     }
 
     [Fact]

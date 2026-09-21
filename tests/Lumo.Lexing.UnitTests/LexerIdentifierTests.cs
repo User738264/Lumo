@@ -1,4 +1,5 @@
 using Lumo.Lexing.UnitTests.Helpers;
+
 using Xunit;
 
 namespace Lumo.Lexing.UnitTests;
@@ -65,20 +66,6 @@ public class LexerIdentifierTests
         Assert.Equal("abc", tokens[0].Lexeme);
         Assert.Equal(TokenType.Plus, tokens[1].Type);
         Assert.Equal("def", tokens[2].Lexeme);
-    }
-
-    [Fact]
-    public void Reads_digits_before_letters_as_separate_tokens()
-    {
-        // Идентификатор не может начинаться с цифры, поэтому текст распадается на два токена.
-        const string source = "12abc";
-
-        IReadOnlyList<Token> tokens = LexerRunner.Tokenize(source);
-
-        Assert.Equal(TokenType.IntLiteral, tokens[0].Type);
-        Assert.Equal("12", tokens[0].Lexeme);
-        Assert.Equal(TokenType.Identifier, tokens[1].Type);
-        Assert.Equal("abc", tokens[1].Lexeme);
     }
 
     [Fact]
