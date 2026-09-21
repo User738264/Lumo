@@ -1,4 +1,5 @@
 using Lumo.Lexing.UnitTests.Helpers;
+
 using Xunit;
 
 namespace Lumo.Lexing.UnitTests;

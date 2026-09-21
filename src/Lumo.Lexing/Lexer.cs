@@ -360,6 +360,7 @@ public sealed class Lexer
         return ch switch
         {
             'n' => '\n',
+            'r' => '\r',
             't' => '\t',
             '"' => '"',
             '\\' => '\\',

@@ -29,8 +29,8 @@
 
 ## `LexerStringLiteralTests`
 
-- [x] `Can_read_string_literal` — пустые строки, обычный текст, Unicode, комментарии, пунктуация и escape-последовательности `\n`, `\t`, `\"`, `\\` внутри строк
-- [x] `Rejects_invalid_string_literal` — незакрытая строка, перевод строки, обратная косая черта в конце, неизвестные escape-последовательности
+- [x] `Can_read_string_literal` — пустые строки, обычный текст, Unicode, комментарии, пунктуация и escape-последовательности `\n`, `\r`, `\t`, `\"`, `\\` внутри строк, включая перенос `\r\n`
+- [x] `Rejects_invalid_string_literal` — незакрытая строка, неэкранированные LF, CR и CR LF, обратная косая черта в конце файла или строки, неизвестные escape-последовательности
 - [x] `Can_read_two_literals_in_a_row` — две строковые лексемы подряд
 - [x] `Reports_position_of_unterminated_literal` — позиция начала незакрытой строки
 - [x] `Reports_position_of_unknown_escape` — позиция обратной косой черты неизвестной escape-последовательности
