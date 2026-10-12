@@ -18,11 +18,11 @@ func factorial(n: int) -> int {
     return result;
 }
 
-func main() -> int {
+func main() {
     var n: int = read_int();
     if (n < 0 || n > 20) {
         print_string("Ожидается число от 0 до 20\n");
-        return 1;
+        return;
     }
 
     print_string("n! =\t");
@@ -33,6 +33,4 @@ func main() -> int {
     origin.x = 0;
     origin.y = 0;
     print_bool(origin.x == origin.y && !false);
-
-    return 0;
 }
