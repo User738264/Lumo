@@ -10,10 +10,19 @@ namespace Lumo.Parsing;
 /// </summary>
 public sealed class Parser
 {
+    // Лексер, из которого парсер по одному получает токены.
     private readonly Lexer _lexer;
+
+    // Поток, из которого программа читает ввод.
     private readonly TextReader _input;
+
+    // Поток, в который программа пишет вывод.
     private readonly TextWriter _output;
+
+    // Признак прохода с выполнением; в проверочном проходе операции не выполняются.
     private readonly bool _execute;
+
+    // Текущий токен — первый ещё не разобранный.
     private Token _current;
 
     public Parser(string source, TextReader input, TextWriter output, bool execute)
@@ -31,6 +40,7 @@ public sealed class Parser
         Expect(TokenType.EndOfFile);
     }
 
+    // Разбирает объявление функции main (правило main_function).
     private void ParseMainFunction()
     {
         Expect(TokenType.KeywordFunc);
@@ -45,30 +55,29 @@ public sealed class Parser
         ParseBlock();
     }
 
+    // Разбирает блок инструкций в фигурных скобках (правило block).
     private void ParseBlock()
     {
         Expect(TokenType.LeftBrace);
-        while (_current.Type != TokenType.RightBrace)
+        while (_current.Type is not (TokenType.RightBrace or TokenType.EndOfFile))
         {
-            if (_current.Type == TokenType.EndOfFile)
-            {
-                throw Error("ожидается закрывающая фигурная скобка", _current);
-            }
-
             ParseStatement();
         }
 
         Expect(TokenType.RightBrace);
     }
 
+    // Разбирает инструкцию: выражение и точку с запятой (правило statement).
     private void ParseStatement()
     {
         ParseExpression();
         Expect(TokenType.Semicolon);
     }
 
+    // Разбирает выражение (правило expression).
     private long? ParseExpression() => ParseAdditiveExpression();
 
+    // Разбирает сложение и вычитание (правило additive_expression).
     private long? ParseAdditiveExpression()
     {
         long? value = ParseMultiplicativeExpression();
@@ -83,6 +92,7 @@ public sealed class Parser
         return value;
     }
 
+    // Разбирает умножение, деление и взятие остатка (правило multiplicative_expression).
     private long? ParseMultiplicativeExpression()
     {
         long? value = ParseUnaryExpression();
@@ -97,6 +107,7 @@ public sealed class Parser
         return value;
     }
 
+    // Разбирает унарный минус (правило unary_expression).
     private long? ParseUnaryExpression()
     {
         if (_current.Type != TokenType.Minus)
@@ -116,6 +127,7 @@ public sealed class Parser
         }
     }
 
+    // Разбирает число, вызов функции или выражение в скобках (правило primary_expression).
     private long? ParsePrimaryExpression()
     {
         switch (_current.Type)
@@ -134,6 +146,7 @@ public sealed class Parser
         }
     }
 
+    // Разбирает вызов встроенной функции read_int или print_int (правило function_call).
     private long? ParseFunctionCall()
     {
         Token name = Expect(TokenType.Identifier);
@@ -158,12 +171,15 @@ public sealed class Parser
 
         if (_execute)
         {
-            _output.WriteLine(arguments[0].ToString(CultureInfo.InvariantCulture));
+            // Спецификация требует перевод строки LF независимо от операционной системы.
+            _output.Write(arguments[0].ToString(CultureInfo.InvariantCulture));
+            _output.Write('\n');
         }
 
         return null;
     }
 
+    // Разбирает аргументы вызова, разделённые запятыми (правило argument_list).
     private List<long> ParseArgumentList()
     {
         List<long> arguments = [];
@@ -181,6 +197,7 @@ public sealed class Parser
         while (true);
     }
 
+    // Читает очередную строку ввода и возвращает записанное в ней целое число.
     private long ReadInt(Token name)
     {
         string? line = _input.ReadLine();
@@ -190,13 +207,10 @@ public sealed class Parser
         }
 
         string text = line.Trim(' ', '\t');
-        int digitStart = text.StartsWith('+') || text.StartsWith('-') ? 1 : 0;
-        for (int i = digitStart; i < text.Length; ++i)
+        string digits = text.StartsWith('+') || text.StartsWith('-') ? text[1..] : text;
+        if (digits.Length == 0 || !digits.All(char.IsAsciiDigit))
         {
-            if (text[i] < '0' || text[i] > '9')
-            {
-                throw Error("ожидается десятичная запись целого числа", name);
-            }
+            throw Error("ожидается десятичная запись целого числа", name);
         }
 
         // NumberStyles.AllowLeadingSign не допускает прочие пробельные символы.
@@ -208,6 +222,7 @@ public sealed class Parser
         return value;
     }
 
+    // Выполняет бинарную арифметическую операцию; в проверочном проходе возвращает ноль.
     private long EvaluateBinary(Token operation, long left, long right)
     {
         if (!_execute)
@@ -240,26 +255,53 @@ public sealed class Parser
         }
     }
 
+    // Возвращает значение выражения; у вызова print_int значения нет, и это ошибка.
     private static long RequireInt(long? value, Token token)
     {
         return value ?? throw Error("print_int не возвращает значение", token);
     }
 
+    // Создаёт ошибку с позицией указанного токена.
     private static InterpreterException Error(string description, Token token)
     {
         return new InterpreterException(description, token.Position);
     }
 
+    // Описывает ожидаемый токен для сообщения об ошибке.
+    private static string DescribeTokenType(TokenType type)
+    {
+        return type switch
+        {
+            TokenType.KeywordFunc => "'func'",
+            TokenType.Identifier => "идентификатор",
+            TokenType.LeftParen => "'('",
+            TokenType.RightParen => "')'",
+            TokenType.LeftBrace => "'{'",
+            TokenType.RightBrace => "'}'",
+            TokenType.Semicolon => "';'",
+            TokenType.EndOfFile => "конец файла",
+            _ => throw new InvalidOperationException("Нет описания для категории токена"),
+        };
+    }
+
+    // Описывает встреченный токен для сообщения об ошибке.
+    private static string DescribeToken(Token token)
+    {
+        return token.Type == TokenType.EndOfFile ? "конец файла" : $"'{token.Lexeme}'";
+    }
+
+    // Проверяет категорию текущего токена и переходит к следующему.
     private Token Expect(TokenType type)
     {
         if (_current.Type != type)
         {
-            throw Error($"ожидается {type}, получено {_current.Type}", _current);
+            throw Error($"ожидается {DescribeTokenType(type)}, получено {DescribeToken(_current)}", _current);
         }
 
         return Advance();
     }
 
+    // Переходит к следующему токену и возвращает текущий.
     private Token Advance()
     {
         Token previous = _current;
