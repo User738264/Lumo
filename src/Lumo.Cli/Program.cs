@@ -1,42 +1,32 @@
-using System.Diagnostics.CodeAnalysis;
-
 using Lumo.Lexing;
+using Lumo.Parsing;
 
 namespace Lumo.Cli;
 
-/// <summary>
-///  Точка входа консольной утилиты: печатает список токенов указанного файла.
-/// </summary>
-[ExcludeFromCodeCoverage(Justification = "Точка входа покрывается ручной проверкой, а не модульными тестами.")]
+/// <summary>Консольный интерпретатор Lumo.</summary>
 public static class Program
 {
-    public static int Main(string[] args)
+    public static int Main(string[] args) => Run(args, Console.In, Console.Out, Console.Error);
+
+    /// <summary>Запускает CLI с подменяемыми потоками для приёмочных тестов.</summary>
+    public static int Run(string[] args, TextReader input, TextWriter output, TextWriter error)
     {
         if (args.Length != 1)
         {
-            Console.Error.WriteLine("Использование: lumo-lexer <файл.lumo>");
+            error.WriteLine("Использование: lumo <файл.lumo>");
             return 1;
         }
 
         try
         {
             string text = SourceFile.ReadAllText(args[0]);
-            Lexer lexer = new(text);
-            foreach (Token token in lexer.Tokenize())
-            {
-                Console.WriteLine(token);
-            }
-
+            Interpreter.Run(text, input, output);
             return 0;
         }
-        catch (LexicalErrorException error)
+        catch (Exception exception) when (exception is LexicalErrorException
+            or InterpreterException or IOException or UnauthorizedAccessException)
         {
-            Console.Error.WriteLine(error.Message);
-            return 1;
-        }
-        catch (IOException error)
-        {
-            Console.Error.WriteLine(error.Message);
+            error.WriteLine(exception.Message);
             return 1;
         }
     }

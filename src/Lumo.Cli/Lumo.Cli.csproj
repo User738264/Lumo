@@ -4,10 +4,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>lumo-lexer</AssemblyName>
+    <AssemblyName>lumo</AssemblyName>
     <RootNamespace>Lumo.Cli</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Lumo.Lexing\Lumo.Lexing.csproj" />
+    <ProjectReference Include="..\Lumo.Parsing\Lumo.Parsing.csproj" />
   </ItemGroup>
 </Project>
