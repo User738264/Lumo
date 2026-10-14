@@ -150,12 +150,12 @@ public sealed class Parser
     private long? ParseFunctionCall()
     {
         Token name = Expect(TokenType.Identifier);
+        Expect(TokenType.LeftParen);
         if (name.Lexeme is not ("read_int" or "print_int"))
         {
             throw Error($"неизвестная функция '{name.Lexeme}'", name);
         }
 
-        Expect(TokenType.LeftParen);
         List<long> arguments = _current.Type == TokenType.RightParen ? [] : ParseArgumentList();
         Expect(TokenType.RightParen);
         int expectedCount = name.Lexeme == "read_int" ? 0 : 1;
@@ -182,19 +182,21 @@ public sealed class Parser
     // Разбирает аргументы вызова, разделённые запятыми (правило argument_list).
     private List<long> ParseArgumentList()
     {
-        List<long> arguments = [];
-        do
+        List<long> arguments = [ParseArgument()];
+        while (_current.Type == TokenType.Comma)
         {
-            Token start = _current;
-            arguments.Add(RequireInt(ParseExpression(), start));
-            if (_current.Type != TokenType.Comma)
-            {
-                return arguments;
-            }
-
             Advance();
+            arguments.Add(ParseArgument());
         }
-        while (true);
+
+        return arguments;
+    }
+
+    // Разбирает аргумент вызова; у аргумента должно быть значение.
+    private long ParseArgument()
+    {
+        Token start = _current;
+        return RequireInt(ParseExpression(), start);
     }
 
     // Читает очередную строку ввода и возвращает записанное в ней целое число.
