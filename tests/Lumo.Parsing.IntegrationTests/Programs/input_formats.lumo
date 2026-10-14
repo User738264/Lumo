@@ -1,0 +1,8 @@
+// Допустимые форматы строк ввода: знак, ведущие нули, пробелы и табуляция по краям.
+
+func main() {
+    print_int(read_int());
+    print_int(read_int());
+    print_int(read_int());
+    print_int(read_int());
+}

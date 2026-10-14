@@ -61,3 +61,11 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# Acceptance test files always use LF line endings.
+#
+# Expected output is compared byte by byte, so these files must not be
+# converted to CRLF on checkout.
+###############################################################################
+tests/**/Programs/* text eol=lf

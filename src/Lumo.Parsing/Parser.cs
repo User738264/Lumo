@@ -5,8 +5,9 @@ using Lumo.Lexing;
 namespace Lumo.Parsing;
 
 /// <summary>
-/// Рекурсивный спуск без AST. В проверочном проходе числа заменяются нулями,
-/// но отсутствие значения у print_int сохраняется как null.
+/// Рекурсивный спуск без AST. В проверочном проходе вычисления и ввод/вывод не выполняются:
+/// результаты операций и read_int заменяются нулями, а отсутствие значения у print_int
+/// сохраняется как null.
 /// </summary>
 public sealed class Parser
 {
@@ -215,7 +216,7 @@ public sealed class Parser
             throw Error("ожидается десятичная запись целого числа", name);
         }
 
-        // NumberStyles.AllowLeadingSign не допускает прочие пробельные символы.
+        // Формат строки уже проверен, поэтому разбор не удаётся, только если число вне диапазона int.
         if (!long.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out long value))
         {
             throw Error("ожидается целое число в диапазоне int", name);
@@ -232,7 +233,7 @@ public sealed class Parser
             return 0;
         }
 
-        if (operation.Type is TokenType.Slash or TokenType.Percent && right == 0)
+        if (operation.Type is (TokenType.Slash or TokenType.Percent) && right == 0)
         {
             throw Error("деление на ноль", operation);
         }
@@ -246,7 +247,7 @@ public sealed class Parser
                 TokenType.Star => checked(left * right),
                 TokenType.Slash => checked(left / right),
 
-                // Математический остаток равен нулю и помещается в int.
+                // При делителе -1 остаток всегда равен 0, а long.MinValue % -1 в .NET вызывает OverflowException.
                 TokenType.Percent => right == -1 ? 0 : left % right,
                 _ => throw new InvalidOperationException("Неизвестный арифметический оператор"),
             };

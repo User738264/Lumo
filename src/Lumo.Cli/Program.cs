@@ -23,8 +23,8 @@ public static class Program
             Interpreter.Run(text, input, output);
             return 0;
         }
-        catch (Exception exception) when (exception is LexicalErrorException
-            or InterpreterException or IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is LexicalErrorException or InterpreterException
+            or IOException or UnauthorizedAccessException or ArgumentException)
         {
             error.WriteLine(exception.Message);
             return 1;

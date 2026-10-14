@@ -20,4 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lumo.Cli\Lumo.Cli.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="Programs\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

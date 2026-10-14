@@ -1,0 +1,7 @@
+// Ошибка выполнения: программа читает три числа, а на вход подано только два.
+
+func main() {
+    print_int(read_int());
+    print_int(read_int());
+    print_int(read_int());
+}
