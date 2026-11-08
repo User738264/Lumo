@@ -8,6 +8,7 @@
     <RootNamespace>Lumo.Cli</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Lumo.Execution\Lumo.Execution.csproj" />
     <ProjectReference Include="..\Lumo.Parsing\Lumo.Parsing.csproj" />
   </ItemGroup>
 </Project>

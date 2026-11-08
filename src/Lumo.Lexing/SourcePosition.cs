@@ -24,6 +24,14 @@ public readonly record struct SourcePosition
     /// </summary>
     public int Column { get; }
 
+    /// <summary>
+    ///  Формирует текст сообщения об ошибке, начинающийся с этой позиции: «Строка N, столбец M: описание».
+    /// </summary>
+    public string FormatError(string description)
+    {
+        return string.Create(CultureInfo.InvariantCulture, $"Строка {Line}, столбец {Column}: {description}");
+    }
+
     public override string ToString()
     {
         return string.Create(CultureInfo.InvariantCulture, $"{Line}:{Column}");

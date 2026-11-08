@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Lumo.Lexing;
 
 /// <summary>
@@ -22,7 +20,7 @@ public sealed class LexicalErrorException : Exception
     }
 
     public LexicalErrorException(string description, SourcePosition position)
-        : base(FormatMessage(description, position))
+        : base(position.FormatError(description))
     {
         Description = description;
         Position = position;
@@ -37,12 +35,4 @@ public sealed class LexicalErrorException : Exception
     ///  Позиция символа, на котором обнаружена ошибка.
     /// </summary>
     public SourcePosition Position { get; }
-
-    // Собирает текст сообщения об ошибке, начинающийся с позиции в исходном тексте.
-    private static string FormatMessage(string description, SourcePosition position)
-    {
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"Строка {position.Line}, столбец {position.Column}: {description}");
-    }
 }

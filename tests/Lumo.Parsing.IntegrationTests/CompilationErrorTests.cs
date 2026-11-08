@@ -1,5 +1,6 @@
 using System.Globalization;
 
+using Lumo.Cli;
 using Lumo.Parsing.IntegrationTests.Helpers;
 
 using Xunit;
@@ -87,12 +88,23 @@ public class CompilationErrorTests
     public void Does_not_read_input_when_program_has_errors()
     {
         const string source = "func main() { read_int(); unknown(); }";
-        using StringReader input = new("123");
-        using StringWriter output = new(CultureInfo.InvariantCulture);
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, source);
+            using StringReader input = new("123");
+            using StringWriter output = new(CultureInfo.InvariantCulture);
+            using StringWriter error = new(CultureInfo.InvariantCulture);
 
-        Assert.Throws<InterpreterException>(() => Interpreter.Run(source, input, output));
+            int exitCode = Program.Run([path], input, output, error);
 
-        Assert.Equal("123", input.ReadToEnd());
-        Assert.Empty(output.ToString());
+            Assert.Equal(1, exitCode);
+            Assert.Equal("123", input.ReadToEnd());
+            Assert.Empty(output.ToString());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 }

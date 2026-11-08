@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Lumo.Ast/Lumo.Ast.csproj" />
+    <Project Path="src/Lumo.Execution/Lumo.Execution.csproj" />
     <Project Path="src/Lumo.Parsing/Lumo.Parsing.csproj" />
     <Project Path="src/Lumo.Lexing/Lumo.Lexing.csproj" />
     <Project Path="src/Lumo.Cli/Lumo.Cli.csproj" />
@@ -7,5 +9,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Lumo.Parsing.IntegrationTests/Lumo.Parsing.IntegrationTests.csproj" />
     <Project Path="tests/Lumo.Lexing.UnitTests/Lumo.Lexing.UnitTests.csproj" />
+    <Project Path="tests/Lumo.Parsing.UnitTests/Lumo.Parsing.UnitTests.csproj" />
+    <Project Path="tests/Lumo.Execution.UnitTests/Lumo.Execution.UnitTests.csproj" />
   </Folder>
 </Solution>

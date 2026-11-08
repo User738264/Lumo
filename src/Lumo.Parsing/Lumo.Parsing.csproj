@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Lumo.Ast/Lumo.Ast.csproj" />
     <ProjectReference Include="../Lumo.Lexing/Lumo.Lexing.csproj" />
   </ItemGroup>
 </Project>

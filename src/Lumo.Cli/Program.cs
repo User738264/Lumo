@@ -1,3 +1,4 @@
+using Lumo.Execution;
 using Lumo.Lexing;
 using Lumo.Parsing;
 
@@ -20,11 +21,11 @@ public static class Program
         try
         {
             string text = SourceFile.ReadAllText(args[0]);
-            Interpreter.Run(text, input, output);
+            Interpreter.Run(text, new TextStreamEnvironment(input, output));
             return 0;
         }
-        catch (Exception exception) when (exception is LexicalErrorException or InterpreterException
-            or IOException or UnauthorizedAccessException or ArgumentException)
+        catch (Exception exception) when (exception is LexicalErrorException or CompilationException
+            or RuntimeErrorException or IOException or UnauthorizedAccessException or ArgumentException)
         {
             error.WriteLine(exception.Message);
             return 1;
