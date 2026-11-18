@@ -1,0 +1,17 @@
+// Наименьшая, наибольшая температура и размах по четырём измерениям.
+func report(low: int, high: int) {
+    print_int(low);
+    print_int(high);
+    print_int(high - low);
+    return;
+}
+
+func main() {
+    var first: int = read_int();
+    var second: int = read_int();
+    var third: int = read_int();
+    var fourth: int = read_int();
+    var low: int = min(first, second);
+    low = min(low, third, fourth);
+    report(low, max(first, second, third, fourth));
+}

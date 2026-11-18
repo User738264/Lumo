@@ -22,14 +22,38 @@ public sealed class AstPrinter : IAstVisitor
         return printer._builder.ToString();
     }
 
+    public void Visit(Parameter node)
+    {
+        _builder.Append(node.Name);
+    }
+
     public void Visit(ProgramNode node)
     {
-        node.MainFunction.Accept(this);
+        for (int i = 0; i < node.Functions.Count; ++i)
+        {
+            if (i > 0)
+            {
+                _builder.Append(' ');
+            }
+
+            node.Functions[i].Accept(this);
+        }
     }
 
     public void Visit(FunctionDeclaration node)
     {
-        _builder.Append("func ").Append(node.Name).Append(' ');
+        _builder.Append("func ").Append(node.Name);
+        if (node.Parameters.Count != 0)
+        {
+            _builder.Append('(').AppendJoin(", ", node.Parameters.Select(parameter => parameter.Name)).Append(')');
+        }
+
+        if (node.ReturnsValue)
+        {
+            _builder.Append(" -> int");
+        }
+
+        _builder.Append(' ');
         node.Body.Accept(this);
     }
 
@@ -54,6 +78,37 @@ public sealed class AstPrinter : IAstVisitor
     public void Visit(IntLiteralExpression node)
     {
         _builder.Append(CultureInfo.InvariantCulture, $"{node.Value}");
+    }
+
+    public void Visit(VariableExpression node)
+    {
+        _builder.Append(node.Name);
+    }
+
+    public void Visit(VariableDeclarationStatement node)
+    {
+        _builder.Append("var ").Append(node.Name).Append(" = ");
+        node.Initializer.Accept(this);
+        _builder.Append(';');
+    }
+
+    public void Visit(AssignmentStatement node)
+    {
+        _builder.Append(node.Name).Append(" = ");
+        node.Value.Accept(this);
+        _builder.Append(';');
+    }
+
+    public void Visit(ReturnStatement node)
+    {
+        _builder.Append("return");
+        if (node.Value != null)
+        {
+            _builder.Append(' ');
+            node.Value.Accept(this);
+        }
+
+        _builder.Append(';');
     }
 
     public void Visit(UnaryExpression node)

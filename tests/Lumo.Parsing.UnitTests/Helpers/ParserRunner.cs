@@ -21,13 +21,17 @@ public static class ParserRunner
     {
         ProgramNode program = Parse("func main() { " + expression + "; }");
         ExpressionStatement statement = Assert.IsType<ExpressionStatement>(
-            Assert.Single(program.MainFunction.Body.Statements));
+            Assert.Single(program.Functions.Single(function => function.Name == "main").Body.Statements));
         return AstPrinter.Print(statement.Expression);
     }
 
-    // Проверяет, что разбор программы завершается ошибкой компиляции, и возвращает её.
+    // Проверяет разбор и семантический анализ, возвращая ошибку компиляции.
     public static CompilationException Error(string source)
     {
-        return Assert.Throws<CompilationException>(() => _ = Parse(source));
+        return Assert.Throws<CompilationException>(() =>
+        {
+            ProgramNode program = Parse(source);
+            new SemanticAnalyzer().Check(program);
+        });
     }
 }

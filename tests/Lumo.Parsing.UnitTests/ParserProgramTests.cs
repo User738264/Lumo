@@ -15,6 +15,12 @@ public class ParserProgramTests
             // Пустая функция main.
             { "func main() {}", "func main { }" },
 
+            // Узлы параметров, чтения, объявления, присваивания и обе формы return.
+            {
+                "func twice(x: int) -> int { return x * 2; } func main() { var n: int = 1; n = twice(n); return; }",
+                "func twice(x) -> int { return (* x 2); } func main { var n = 1; n = (call twice n); return; }"
+            },
+
             // Несколько инструкций сохраняют порядок записи.
             { "func main() { 1; print_int(2); read_int(); }", "func main { 1; (call print_int 2); (call read_int); }" },
 
@@ -33,12 +39,32 @@ public class ParserProgramTests
     }
 
     [Fact]
+    public void Builds_tree_without_semantically_validating_variable_names()
+    {
+        ProgramNode program = new Parser("func main() { missing; }").ParseProgram();
+
+        ExpressionStatement statement = Assert.IsType<ExpressionStatement>(Assert.Single(program.Functions[0].Body.Statements));
+        VariableExpression variable = Assert.IsType<VariableExpression>(statement.Expression);
+        Assert.Equal("missing", variable.Name);
+    }
+
+    [Fact]
+    public void Allows_an_empty_program_node_to_be_constructed()
+    {
+        ProgramNode program = new([]);
+
+        Assert.Empty(program.Functions);
+        Assert.Equal(new SourcePosition(1, 1), program.Position);
+    }
+
+    [Fact]
     public void Stores_main_function_name_and_body()
     {
         ProgramNode program = ParserRunner.Parse("func main() { 1; 2; }");
 
-        Assert.Equal("main", program.MainFunction.Name);
-        Assert.Equal(2, program.MainFunction.Body.Statements.Count);
+        FunctionDeclaration main = program.Functions.Single(function => function.Name == "main");
+        Assert.Equal("main", main.Name);
+        Assert.Equal(2, main.Body.Statements.Count);
     }
 
     [Fact]
@@ -46,7 +72,7 @@ public class ParserProgramTests
     {
         ProgramNode program = ParserRunner.Parse("func main() {\n  1 + 2;\n}");
 
-        FunctionDeclaration function = program.MainFunction;
+        FunctionDeclaration function = program.Functions.Single(function => function.Name == "main");
         Statement statement = Assert.Single(function.Body.Statements);
         Assert.Equal(new SourcePosition(1, 1), program.Position);
         Assert.Equal(new SourcePosition(1, 1), function.Position);
@@ -60,7 +86,7 @@ public class ParserProgramTests
         ProgramNode program = ParserRunner.Parse("func main() {\n  -1 + read_int();\n}");
 
         ExpressionStatement statement = Assert.IsType<ExpressionStatement>(
-            Assert.Single(program.MainFunction.Body.Statements));
+            Assert.Single(program.Functions.Single(function => function.Name == "main").Body.Statements));
         BinaryExpression sum = Assert.IsType<BinaryExpression>(statement.Expression);
         UnaryExpression negation = Assert.IsType<UnaryExpression>(sum.Left);
         IntLiteralExpression one = Assert.IsType<IntLiteralExpression>(negation.Operand);
@@ -76,7 +102,7 @@ public class ParserProgramTests
     {
         CompilationException error = ParserRunner.Error("func main() { 1 + ; }");
 
-        Assert.Equal("Строка 1, столбец 19: ожидается число, вызов функции или выражение в скобках", error.Message);
+        Assert.Equal("Строка 1, столбец 19: ожидается число, имя или выражение в скобках", error.Message);
         Assert.Equal(new SourcePosition(1, 19), error.Position);
     }
 }

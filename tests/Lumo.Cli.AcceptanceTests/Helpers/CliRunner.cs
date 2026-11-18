@@ -2,7 +2,7 @@ using System.Globalization;
 
 using Lumo.Cli;
 
-namespace Lumo.Parsing.IntegrationTests.Helpers;
+namespace Lumo.Cli.AcceptanceTests.Helpers;
 
 /// <summary>
 ///  Вспомогательные методы для запуска консольного интерпретатора с подменёнными потоками.

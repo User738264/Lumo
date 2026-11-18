@@ -5,7 +5,7 @@ using Lumo.Parsing;
 namespace Lumo.Cli;
 
 /// <summary>
-/// Конвейер интерпретатора: парсер строит AST всей программы, затем вычислитель выполняет его.
+/// Конвейер интерпретатора: парсер строит AST, анализатор проверяет его, затем вычислитель выполняет.
 /// Выполнение начинается только после успешного разбора, поэтому ошибки компиляции
 /// обнаруживаются до первого ввода и вывода.
 /// </summary>
@@ -15,6 +15,7 @@ public static class Interpreter
     {
         Parser parser = new(source);
         ProgramNode program = parser.ParseProgram();
+        new SemanticAnalyzer().Check(program);
         AstEvaluator evaluator = new(environment);
         evaluator.Execute(program);
     }

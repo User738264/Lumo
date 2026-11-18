@@ -7,9 +7,19 @@ public interface IAstVisitor
 
     void Visit(FunctionDeclaration node);
 
+    void Visit(Parameter node);
+
     void Visit(BlockStatement node);
 
     void Visit(ExpressionStatement node);
+
+    void Visit(VariableDeclarationStatement node);
+
+    void Visit(AssignmentStatement node);
+
+    void Visit(ReturnStatement node);
+
+    void Visit(VariableExpression node);
 
     void Visit(IntLiteralExpression node);
 
