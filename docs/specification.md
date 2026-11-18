@@ -34,6 +34,7 @@
 третьей итерации: функции с параметрами и возвратом, локальные переменные,
 вложенные блоки, целочисленная арифметика и ввод/вывод. Условия, циклы,
 глобальные переменные и типы, отличные от `int`, в это подмножество не входят.
+Из возможностей на выбор реализованы `read_int` и функции `min`/`max` с произвольным числом аргументов (не менее одного).
 
 ## Нотация
 
@@ -408,6 +409,6 @@ func main() {
 11, 1, -3, -1.
 
 Ещё два исполняемых примера находятся в каталоге приёмочных тестов:
-[площадь прямоугольника](../tests/Lumo.Parsing.IntegrationTests/Programs/rectangle_area.lumo)
-и [размах температур](../tests/Lumo.Parsing.IntegrationTests/Programs/temperature_range.lumo).
+[площадь прямоугольника](../tests/Lumo.Cli.AcceptanceTests/Programs/rectangle_area.lumo)
+и [размах температур](../tests/Lumo.Cli.AcceptanceTests/Programs/temperature_range.lumo).
 Ввод и ожидаемый вывод лежат рядом с ними в файлах `.stdin` и `.stdout`.

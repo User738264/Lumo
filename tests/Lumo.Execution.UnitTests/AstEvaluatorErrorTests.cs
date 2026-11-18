@@ -99,4 +99,17 @@ public class AstEvaluatorErrorTests
 
         Assert.Equal("Неизвестная функция 'unknown'", error.Message);
     }
+
+    [Fact]
+    public void Reports_call_depth_limit_for_recursive_function()
+    {
+        FunctionDeclaration loop = Function("loop", false, [], Exec(Call("loop")));
+        FunctionDeclaration main = Function("main", false, [], Exec(Call("loop")));
+        ProgramNode program = Program(main, loop);
+
+        RuntimeErrorException error = Assert.Throws<RuntimeErrorException>(
+            () => new AstEvaluator(new FakeEnvironment()).Execute(program));
+
+        Assert.Equal("Строка 1, столбец 1: превышена глубина вызовов функций", error.Message);
+    }
 }

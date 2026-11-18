@@ -4,14 +4,19 @@ using Lumo.Lexing;
 namespace Lumo.Parsing;
 
 /// <summary>Проверяет готовое дерево без ввода, вывода и вычисления выражений.</summary>
-internal sealed class SemanticAnalyzer
+public sealed class SemanticAnalyzer : IAstVisitor
 {
     private readonly Dictionary<string, FunctionDeclaration> _functions = new(StringComparer.Ordinal);
     private readonly Stack<HashSet<string>> _scopes = new();
+    private FunctionDeclaration? _currentFunction;
+    private SourcePosition? _valueRequiredAt;
+    private bool _expressionReturnsValue;
+    private bool _statementReturns;
 
     public void Check(ProgramNode program)
     {
-        // Сначала собираем все заголовки: взаимные ссылки и вызовы до объявления допустимы.
+        _functions.Clear();
+        _scopes.Clear();
         foreach (FunctionDeclaration function in program.Functions)
         {
             if (BuiltinFunctions.IsBuiltin(function.Name))
@@ -27,7 +32,8 @@ internal sealed class SemanticAnalyzer
 
         if (!_functions.TryGetValue("main", out FunctionDeclaration? main))
         {
-            throw new CompilationException("ожидается функция main", program.Functions[0].NamePosition);
+            SourcePosition position = program.Functions.Count > 0 ? program.Functions[0].NamePosition : program.Position;
+            throw new CompilationException("ожидается функция main", position);
         }
 
         if (main.Parameters.Count != 0 || main.ReturnsValue)
@@ -35,165 +41,207 @@ internal sealed class SemanticAnalyzer
             throw new CompilationException("точка входа должна иметь вид func main()", main.NamePosition);
         }
 
-        foreach (FunctionDeclaration function in program.Functions)
+        program.Accept(this);
+    }
+
+    public void Visit(ProgramNode node)
+    {
+        foreach (FunctionDeclaration function in node.Functions)
         {
-            CheckFunction(function);
+            function.Accept(this);
         }
     }
 
-    private void CheckFunction(FunctionDeclaration function)
+    public void Visit(FunctionDeclaration node)
+    {
+        _currentFunction = node;
+        _scopes.Push(new HashSet<string>(StringComparer.Ordinal));
+        try
+        {
+            foreach (Parameter parameter in node.Parameters)
+            {
+                parameter.Accept(this);
+            }
+
+            bool returns = CheckStatements(node.Body);
+            if (node.ReturnsValue && !returns)
+            {
+                throw new CompilationException($"в функции '{node.Name}' нет возврата значения", node.NamePosition);
+            }
+        }
+        finally
+        {
+            _scopes.Pop();
+            _currentFunction = null;
+        }
+    }
+
+    public void Visit(Parameter node)
+    {
+        Declare(node.Name, node.Position);
+    }
+
+    public void Visit(BlockStatement node)
     {
         _scopes.Push(new HashSet<string>(StringComparer.Ordinal));
-        foreach (Parameter parameter in function.Parameters)
+        try
         {
-            Declare(parameter.Name, parameter.Position);
+            _statementReturns = CheckStatements(node);
         }
-
-        // Параметры и верхний блок тела имеют общую область видимости.
-        bool returns = CheckStatements(function.Body, function);
-        _scopes.Pop();
-        if (function.ReturnsValue && !returns)
+        finally
         {
-            throw new CompilationException($"в функции '{function.Name}' нет возврата значения", function.NamePosition);
+            _scopes.Pop();
         }
     }
 
-    private bool CheckStatements(BlockStatement block, FunctionDeclaration function)
+    public void Visit(ExpressionStatement node)
+    {
+        _ = CheckExpression(node.Expression);
+        _statementReturns = false;
+    }
+
+    public void Visit(VariableDeclarationStatement node)
+    {
+        _ = CheckExpression(node.Initializer, node.Initializer.Position);
+        Declare(node.Name, node.Position);
+        _statementReturns = false;
+    }
+
+    public void Visit(AssignmentStatement node)
+    {
+        RequireVariable(node.Name, node.Position);
+        _ = CheckExpression(node.Value, node.Value.Position);
+        _statementReturns = false;
+    }
+
+    public void Visit(ReturnStatement node)
+    {
+        FunctionDeclaration function = _currentFunction!;
+        if (node.Value == null && function.ReturnsValue)
+        {
+            throw new CompilationException("ожидается возвращаемое значение", node.Position);
+        }
+
+        if (node.Value != null)
+        {
+            if (!function.ReturnsValue)
+            {
+                throw new CompilationException($"функция {function.Name} не возвращает значение", node.Position);
+            }
+
+            _ = CheckExpression(node.Value, node.Value.Position);
+        }
+
+        _statementReturns = true;
+    }
+
+    public void Visit(VariableExpression node)
+    {
+        RequireVariable(node.Name, node.Position);
+        _expressionReturnsValue = true;
+    }
+
+    public void Visit(IntLiteralExpression node)
+    {
+        _expressionReturnsValue = true;
+    }
+
+    public void Visit(UnaryExpression node)
+    {
+        _ = CheckExpression(node.Operand, node.Position);
+        _expressionReturnsValue = true;
+    }
+
+    public void Visit(BinaryExpression node)
+    {
+        _ = CheckExpression(node.Left, node.Position);
+        _ = CheckExpression(node.Right, node.Position);
+        _expressionReturnsValue = true;
+    }
+
+    public void Visit(CallExpression node)
+    {
+        bool returnsValue = CheckCall(node);
+        if (!returnsValue && _valueRequiredAt is SourcePosition position)
+        {
+            throw new CompilationException($"{node.Callee} не возвращает значение", position);
+        }
+
+        _expressionReturnsValue = returnsValue;
+    }
+
+    private bool CheckStatements(BlockStatement block)
     {
         bool returns = false;
         foreach (Statement statement in block.Statements)
         {
-            // В языке пока нет ветвлений: достигнутый return безусловен.
-            // Остальные инструкции тоже проверяем, даже если они не будут выполнены.
-            if (CheckStatement(statement, function))
-            {
-                returns = true;
-            }
+            statement.Accept(this);
+            returns |= _statementReturns;
         }
 
         return returns;
     }
 
-    private bool CheckStatement(Statement statement, FunctionDeclaration function)
+    private bool CheckExpression(Expression expression, SourcePosition? valueRequiredAt = null)
     {
-        switch (statement)
+        SourcePosition? previousRequiredAt = _valueRequiredAt;
+        _valueRequiredAt = valueRequiredAt;
+        try
         {
-            case BlockStatement block:
-                _scopes.Push(new HashSet<string>(StringComparer.Ordinal));
-                bool returns = CheckStatements(block, function);
-                _scopes.Pop();
-                return returns;
-            case VariableDeclarationStatement declaration:
-                CheckExpression(declaration.Initializer, declaration.Initializer.Position);
-                Declare(declaration.Name, declaration.Position);
-                break;
-            case AssignmentStatement assignment:
-                RequireVariable(assignment.Name, assignment.Position);
-                CheckExpression(assignment.Value, assignment.Value.Position);
-                break;
-            case ReturnStatement exit:
-                if (exit.Value == null && function.ReturnsValue)
-                {
-                    throw new CompilationException("ожидается возвращаемое значение", exit.Position);
-                }
-
-                if (exit.Value != null)
-                {
-                    if (!function.ReturnsValue)
-                    {
-                        throw new CompilationException($"функция {function.Name} не возвращает значение", exit.Position);
-                    }
-
-                    CheckExpression(exit.Value, exit.Value.Position);
-                }
-
-                return true;
-            case ExpressionStatement discarded:
-                CheckExpression(discarded.Expression);
-                break;
-            default:
-                throw new InvalidOperationException("Неизвестный вид инструкции");
+            expression.Accept(this);
+            return _expressionReturnsValue;
         }
-
-        return false;
-    }
-
-    // Позиция передаётся, только если выражение должно дать числовое значение.
-    private void CheckExpression(Expression expression, SourcePosition? valueRequiredAt = null)
-    {
-        switch (expression)
+        finally
         {
-            case IntLiteralExpression:
-                break;
-            case VariableExpression variable:
-                RequireVariable(variable.Name, variable.Position);
-                break;
-            case UnaryExpression unary:
-                CheckExpression(unary.Operand, unary.Position);
-                break;
-            case BinaryExpression binary:
-                CheckExpression(binary.Left, binary.Position);
-                CheckExpression(binary.Right, binary.Position);
-                break;
-            case CallExpression call:
-                bool returnsValue = CheckCall(call);
-                if (!returnsValue && valueRequiredAt is SourcePosition position)
-                {
-                    throw new CompilationException($"{call.Callee} не возвращает значение", position);
-                }
-
-                break;
-            default:
-                throw new InvalidOperationException("Неизвестный вид выражения");
+            _valueRequiredAt = previousRequiredAt;
         }
     }
 
     private bool CheckCall(CallExpression call)
     {
         int count = call.Arguments.Count;
-        int expected;
-        bool returnsValue = true;
-        switch (call.Callee)
+        bool returnsValue;
+        if (call.Callee == "main")
         {
-            case BuiltinFunctions.ReadInt:
-                expected = 0;
-                break;
-            case BuiltinFunctions.PrintInt:
-                returnsValue = false;
-                expected = 1;
-                break;
-            case BuiltinFunctions.Abs:
-                expected = 1;
-                break;
-            case BuiltinFunctions.Min or BuiltinFunctions.Max:
-                if (count == 0)
-                {
-                    throw new CompilationException($"функция {call.Callee} ожидает хотя бы один аргумент", call.Position);
-                }
-
-                expected = count;
-                break;
-            case "main":
-                throw new CompilationException("точку входа main нельзя вызывать явно", call.Position);
-            default:
-                if (!_functions.TryGetValue(call.Callee, out FunctionDeclaration? function))
-                {
-                    throw new CompilationException($"неизвестная функция '{call.Callee}'", call.Position);
-                }
-
-                expected = function.Parameters.Count;
-                returnsValue = function.ReturnsValue;
-                break;
+            throw new CompilationException("точку входа main нельзя вызывать явно", call.Position);
         }
 
-        if (count != expected)
+        if (BuiltinFunctions.TryGet(call.Callee, out BuiltinFunctionDescriptor descriptor))
         {
-            throw new CompilationException($"функция {call.Callee} ожидает аргументов: {expected}", call.Position);
+            if (!descriptor.AcceptsArgumentCount(count))
+            {
+                if (descriptor.MaximumArgumentCount is null)
+                {
+                    string minimum = descriptor.MinimumArgumentCount == 1 ? "один" : descriptor.MinimumArgumentCount.ToString();
+                    throw new CompilationException($"функция {call.Callee} ожидает хотя бы {minimum} аргумент", call.Position);
+                }
+
+                string expected = descriptor.MaximumArgumentCount == descriptor.MinimumArgumentCount
+                    ? descriptor.MinimumArgumentCount.ToString()
+                    : $"хотя бы {descriptor.MinimumArgumentCount}";
+                throw new CompilationException($"функция {call.Callee} ожидает аргументов: {expected}", call.Position);
+            }
+
+            returnsValue = descriptor.ReturnsValue;
+        }
+        else
+        {
+            if (!_functions.TryGetValue(call.Callee, out FunctionDeclaration? function))
+            {
+                throw new CompilationException($"неизвестная функция '{call.Callee}'", call.Position);
+            }
+
+            if (count != function.Parameters.Count)
+            {
+                throw new CompilationException($"функция {call.Callee} ожидает аргументов: {function.Parameters.Count}", call.Position);
+            }
+
+            returnsValue = function.ReturnsValue;
         }
 
         foreach (Expression argument in call.Arguments)
         {
-            CheckExpression(argument, argument.Position);
+            _ = CheckExpression(argument, argument.Position);
         }
 
         return returnsValue;

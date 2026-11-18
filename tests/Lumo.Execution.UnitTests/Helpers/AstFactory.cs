@@ -17,9 +17,53 @@ public static class AstFactory
         return new IntLiteralExpression(value, DefaultPosition);
     }
 
+    public static VariableExpression Variable(string name)
+    {
+        return new VariableExpression(name, DefaultPosition);
+    }
+
+    public static Parameter Parameter(string name)
+    {
+        return new Parameter(name, DefaultPosition);
+    }
+
     public static UnaryExpression Negate(Expression operand, SourcePosition? position = null)
     {
         return new UnaryExpression(UnaryOperator.Negate, operand, position ?? DefaultPosition);
+    }
+
+    public static VariableDeclarationStatement Declare(string name, Expression initializer)
+    {
+        return new VariableDeclarationStatement(name, initializer, DefaultPosition);
+    }
+
+    public static AssignmentStatement Assign(string name, Expression value)
+    {
+        return new AssignmentStatement(name, value, DefaultPosition);
+    }
+
+    public static ReturnStatement Return(Expression? value = null)
+    {
+        return new ReturnStatement(value, DefaultPosition);
+    }
+
+    public static BlockStatement Block(params Statement[] statements)
+    {
+        return new BlockStatement(statements, DefaultPosition);
+    }
+
+    public static FunctionDeclaration Function(
+        string name,
+        bool returnsValue,
+        IReadOnlyList<Parameter> parameters,
+        params Statement[] statements)
+    {
+        return new FunctionDeclaration(name, DefaultPosition, parameters, returnsValue, Block(statements), DefaultPosition);
+    }
+
+    public static ProgramNode Program(params FunctionDeclaration[] functions)
+    {
+        return new ProgramNode(functions);
     }
 
     public static BinaryExpression Binary(
@@ -54,8 +98,6 @@ public static class AstFactory
     // Собирает программу из функции main с указанными инструкциями.
     public static ProgramNode ProgramOf(params Statement[] statements)
     {
-        BlockStatement body = new(statements, DefaultPosition);
-        FunctionDeclaration main = new("main", DefaultPosition, [], false, body, DefaultPosition);
-        return new ProgramNode([main]);
+        return Program(Function("main", false, [], statements));
     }
 }

@@ -8,8 +8,12 @@ namespace Lumo.Execution;
 /// <summary>
 /// Выполняет программу, обходя AST. Выражения вычисляются стековым методом: каждый узел
 /// выражения кладёт своё значение на стек, а операция снимает со стека операнды и кладёт результат.
-/// Процедура не оставляет значения. Ввод и вывод выполняются через IEnvironment.
-/// Вычислитель рассчитан на дерево, прошедшее проверки парсера.
+/// Каждое выражение, возвращающее значение, оставляет ровно одно значение; семантический анализатор
+/// гарантирует этот контракт. Инструкция-выражение отбрасывает это значение, если оно появилось.
+/// Процедура не оставляет значения. Visit(FunctionDeclaration) выполняет тело текущего вызова,
+/// а Visit(ProgramNode) запускает main, а не обходит все объявления как обычный visitor.
+/// Ввод и вывод выполняются через IEnvironment. Вычислитель рассчитан на дерево,
+/// прошедшее семантическую проверку.
 /// </summary>
 public sealed class AstEvaluator : IAstVisitor
 {
@@ -49,6 +53,10 @@ public sealed class AstEvaluator : IAstVisitor
         ExecuteStatements(node.Body);
     }
 
+    public void Visit(Parameter node)
+    {
+    }
+
     public void Visit(BlockStatement node)
     {
         _frame.EnterBlock();
@@ -67,7 +75,7 @@ public sealed class AstEvaluator : IAstVisitor
         int depth = _stack.Count;
         node.Expression.Accept(this);
 
-        // Значение инструкции отбрасывается; вызов процедуры ничего не оставляет на стеке.
+        // Семантический анализ гарантирует не более одного результата; выражение-процедура его не оставляет.
         if (_stack.Count > depth)
         {
             _ = _stack.Pop();
@@ -129,36 +137,39 @@ public sealed class AstEvaluator : IAstVisitor
             arguments[i] = _stack.Pop();
         }
 
-        switch (node.Callee)
+        if (BuiltinFunctions.TryGet(node.Callee, out BuiltinFunctionDescriptor builtin))
         {
-            case BuiltinFunctions.ReadInt:
-                _stack.Push(ReadInt(node.Position));
-                break;
-            case BuiltinFunctions.PrintInt:
-                WriteInt(arguments[0]);
-                break;
-            case BuiltinFunctions.Abs:
-                if (arguments[0] == long.MinValue)
-                {
-                    throw Error("целочисленное переполнение", node.Position);
-                }
+            switch (builtin.Name)
+            {
+                case BuiltinFunctions.ReadInt:
+                    _stack.Push(ReadInt(node.Position));
+                    break;
+                case BuiltinFunctions.PrintInt:
+                    WriteInt(arguments[0]);
+                    break;
+                case BuiltinFunctions.Abs:
+                    if (arguments[0] == long.MinValue)
+                    {
+                        throw Error("целочисленное переполнение", node.Position);
+                    }
 
-                _stack.Push(Math.Abs(arguments[0]));
-                break;
-            case BuiltinFunctions.Min:
-                _stack.Push(arguments.Min());
-                break;
-            case BuiltinFunctions.Max:
-                _stack.Push(arguments.Max());
-                break;
-            default:
-                if (!_functions.TryGetValue(node.Callee, out FunctionDeclaration? function))
-                {
-                    throw new InvalidOperationException($"Неизвестная функция '{node.Callee}'");
-                }
-
-                CallFunction(function, arguments, node.Position);
-                break;
+                    _stack.Push(Math.Abs(arguments[0]));
+                    break;
+                case BuiltinFunctions.Min:
+                    _stack.Push(arguments.Min());
+                    break;
+                case BuiltinFunctions.Max:
+                    _stack.Push(arguments.Max());
+                    break;
+            }
+        }
+        else if (_functions.TryGetValue(node.Callee, out FunctionDeclaration? function))
+        {
+            CallFunction(function, arguments, node.Position);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Неизвестная функция '{node.Callee}'");
         }
     }
 

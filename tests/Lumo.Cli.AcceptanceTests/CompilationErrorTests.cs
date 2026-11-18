@@ -1,11 +1,11 @@
 using System.Globalization;
 
 using Lumo.Cli;
-using Lumo.Parsing.IntegrationTests.Helpers;
+using Lumo.Cli.AcceptanceTests.Helpers;
 
 using Xunit;
 
-namespace Lumo.Parsing.IntegrationTests;
+namespace Lumo.Cli.AcceptanceTests;
 
 public class CompilationErrorTests
 {

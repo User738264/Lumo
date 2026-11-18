@@ -22,6 +22,11 @@ public sealed class AstPrinter : IAstVisitor
         return printer._builder.ToString();
     }
 
+    public void Visit(Parameter node)
+    {
+        _builder.Append(node.Name);
+    }
+
     public void Visit(ProgramNode node)
     {
         for (int i = 0; i < node.Functions.Count; ++i)

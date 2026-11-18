@@ -1,4 +1,4 @@
-namespace Lumo.Parsing.IntegrationTests.Helpers;
+namespace Lumo.Cli.AcceptanceTests.Helpers;
 
 /// <summary>
 ///  Результат запуска консольного интерпретатора: код завершения и содержимое потоков вывода и ошибок.

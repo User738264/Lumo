@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using Lumo.Ast;
 using Lumo.Execution.UnitTests.Helpers;
 
@@ -142,5 +144,78 @@ public class AstEvaluatorTests
         new AstEvaluator(environment).Execute(program);
 
         Assert.Equal(2, environment.UnreadLineCount);
+    }
+
+    [Fact]
+    public void Leaves_block_scope_and_restores_shadowed_variable()
+    {
+        ProgramNode program = ProgramOf(
+            Declare("value", Literal(1)),
+            Block(Declare("value", Literal(2)), Exec(PrintInt(Variable("value")))),
+            Exec(PrintInt(Variable("value"))));
+        FakeEnvironment environment = new();
+
+        new AstEvaluator(environment).Execute(program);
+
+        Assert.Equal("2\n1\n", environment.Output);
+    }
+
+    [Fact]
+    public void Creates_fresh_local_frame_for_each_function_call()
+    {
+        FunctionDeclaration display = Function(
+            "display",
+            false,
+            [Parameter("value")],
+            Declare("copy", Variable("value")),
+            Exec(PrintInt(Variable("copy"))));
+        FunctionDeclaration main = Function(
+            "main",
+            false,
+            [],
+            Exec(Call("display", Literal(1))),
+            Exec(Call("display", Literal(2))));
+        FakeEnvironment environment = new();
+
+        new AstEvaluator(environment).Execute(Program(main, display));
+
+        Assert.Equal("1\n2\n", environment.Output);
+    }
+
+    [Fact]
+    public void Discards_return_value_from_function_call_in_expression_statement()
+    {
+        FunctionDeclaration value = Function("value", true, [], Return(Literal(42)));
+        FunctionDeclaration main = Function(
+            "main",
+            false,
+            [],
+            Exec(Call("value")),
+            Exec(PrintInt(Literal(7))));
+        AstEvaluator evaluator = new(new FakeEnvironment());
+
+        evaluator.Execute(Program(main, value));
+
+        FieldInfo stackField = typeof(AstEvaluator).GetField("_stack", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Stack<long> stack = (Stack<long>)stackField.GetValue(evaluator)!;
+        Assert.Empty(stack);
+    }
+
+    [Fact]
+    public void Return_from_nested_block_exits_function()
+    {
+        FunctionDeclaration value = Function(
+            "value",
+            true,
+            [],
+            Block(Return(Literal(42))),
+            Exec(PrintInt(Literal(0))));
+        FunctionDeclaration main = Function("main", false, [], Exec(PrintInt(Call("value"))));
+        ProgramNode program = Program(main, value);
+        FakeEnvironment environment = new();
+
+        new AstEvaluator(environment).Execute(program);
+
+        Assert.Equal("42\n", environment.Output);
     }
 }

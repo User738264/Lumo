@@ -7,7 +7,7 @@
     <Project Path="src/Lumo.Cli/Lumo.Cli.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Lumo.Parsing.IntegrationTests/Lumo.Parsing.IntegrationTests.csproj" />
+    <Project Path="tests/Lumo.Cli.AcceptanceTests/Lumo.Cli.AcceptanceTests.csproj" />
     <Project Path="tests/Lumo.Lexing.UnitTests/Lumo.Lexing.UnitTests.csproj" />
     <Project Path="tests/Lumo.Parsing.UnitTests/Lumo.Parsing.UnitTests.csproj" />
     <Project Path="tests/Lumo.Execution.UnitTests/Lumo.Execution.UnitTests.csproj" />

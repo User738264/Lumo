@@ -1,4 +1,4 @@
-namespace Lumo.Parsing.IntegrationTests.Helpers;
+namespace Lumo.Cli.AcceptanceTests.Helpers;
 
 /// <summary>
 ///  Программа приёмочного теста из каталога Programs. Файлы теста имеют общее имя:

@@ -7,6 +7,8 @@ public interface IAstVisitor
 
     void Visit(FunctionDeclaration node);
 
+    void Visit(Parameter node);
+
     void Visit(BlockStatement node);
 
     void Visit(ExpressionStatement node);

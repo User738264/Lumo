@@ -1,6 +1,6 @@
 namespace Lumo.Ast;
 
-/// <summary>Имена встроенных функций языка; их знают и парсер, и вычислитель.</summary>
+/// <summary>Описания встроенных функций языка.</summary>
 public static class BuiltinFunctions
 {
     /// <summary>Функция ввода целого числа.</summary>
@@ -15,5 +15,20 @@ public static class BuiltinFunctions
 
     public const string Max = "max";
 
-    public static bool IsBuiltin(string name) => name is ReadInt or PrintInt or Abs or Min or Max;
+    private static readonly IReadOnlyDictionary<string, BuiltinFunctionDescriptor> Functions =
+        new Dictionary<string, BuiltinFunctionDescriptor>(StringComparer.Ordinal)
+        {
+            [ReadInt] = new(ReadInt, 0, 0, true),
+            [PrintInt] = new(PrintInt, 1, 1, false),
+            [Abs] = new(Abs, 1, 1, true),
+            [Min] = new(Min, 1, null, true),
+            [Max] = new(Max, 1, null, true),
+        };
+
+    public static bool IsBuiltin(string name) => Functions.ContainsKey(name);
+
+    public static bool TryGet(string name, out BuiltinFunctionDescriptor descriptor)
+    {
+        return Functions.TryGetValue(name, out descriptor!);
+    }
 }

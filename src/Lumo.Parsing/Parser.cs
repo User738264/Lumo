@@ -4,8 +4,7 @@ using Lumo.Lexing;
 namespace Lumo.Parsing;
 
 /// <summary>
-/// Строит AST рекурсивным спуском. После чтения всего файла проверяет имена и типы:
-/// вызов функции может находиться раньше её объявления.
+/// Строит AST рекурсивным спуском.
 /// </summary>
 public sealed class Parser
 {
@@ -30,9 +29,7 @@ public sealed class Parser
         }
 
         Expect(TokenType.EndOfFile);
-        ProgramNode program = new(functions);
-        new SemanticAnalyzer().Check(program);
-        return program;
+        return new ProgramNode(functions);
     }
 
     private FunctionDeclaration ParseFunctionDeclaration()
