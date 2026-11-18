@@ -3,14 +3,16 @@ namespace Lumo.Ast;
 /// <summary>Корень дерева: программа целиком (правило program).</summary>
 public sealed class ProgramNode : AstNode
 {
-    public ProgramNode(FunctionDeclaration mainFunction)
-        : base(mainFunction.Position)
+    public ProgramNode(IReadOnlyList<FunctionDeclaration> functions)
+        : base(functions[0].Position)
     {
-        MainFunction = mainFunction;
+        Functions = functions;
     }
 
-    /// <summary>Объявление функции main — точки входа программы.</summary>
-    public FunctionDeclaration MainFunction { get; }
+    public IReadOnlyList<FunctionDeclaration> Functions { get; }
+
+    /// <summary>Точка входа проверенной программы.</summary>
+    public FunctionDeclaration MainFunction => Functions.First(function => function.Name == "main");
 
     public override void Accept(IAstVisitor visitor)
     {

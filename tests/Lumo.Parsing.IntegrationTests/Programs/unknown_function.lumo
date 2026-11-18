@@ -2,5 +2,5 @@
 
 func main() {
     print_int(1);
-    print_string("Привет");
+    print_string(42);
 }

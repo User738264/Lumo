@@ -130,4 +130,29 @@ public class VariableFunctionTests
         Assert.Equal("1\n", result.Output);
         Assert.Contains("переполнение", result.Error);
     }
+
+    [Theory]
+    [InlineData("func main(x: int) {}")]
+    [InlineData("func main() -> int { return 0; }")]
+    public void Entry_point_has_no_parameters_or_result(string source)
+    {
+        CliResult result = CliRunner.RunProgram(source, "");
+
+        Assert.Equal(CliResult.Failure("", "Строка 1, столбец 6: точка входа должна иметь вид func main()"), result);
+    }
+
+    [Fact]
+    public void Unbounded_mutual_recursion_stops_with_a_language_error()
+    {
+        const string source = """
+            func main() { print_int(1); first(); }
+            func first() { second(); }
+            func second() { first(); }
+            """;
+        CliResult result = CliRunner.RunProgram(source, "");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Equal("1\n", result.Output);
+        Assert.Contains("глубина вызовов", result.Error);
+    }
 }

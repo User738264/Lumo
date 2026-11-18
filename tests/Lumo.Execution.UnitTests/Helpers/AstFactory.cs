@@ -55,7 +55,7 @@ public static class AstFactory
     public static ProgramNode ProgramOf(params Statement[] statements)
     {
         BlockStatement body = new(statements, DefaultPosition);
-        FunctionDeclaration main = new("main", body, DefaultPosition);
-        return new ProgramNode(main);
+        FunctionDeclaration main = new("main", DefaultPosition, [], false, body, DefaultPosition);
+        return new ProgramNode([main]);
     }
 }

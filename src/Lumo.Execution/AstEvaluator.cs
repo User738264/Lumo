@@ -8,16 +8,22 @@ namespace Lumo.Execution;
 /// <summary>
 /// Выполняет программу, обходя AST. Выражения вычисляются стековым методом: каждый узел
 /// выражения кладёт своё значение на стек, а операция снимает со стека операнды и кладёт результат.
-/// Вызов print_int значения не оставляет. Ввод и вывод выполняются через IEnvironment.
+/// Процедура не оставляет значения. Ввод и вывод выполняются через IEnvironment.
 /// Вычислитель рассчитан на дерево, прошедшее проверки парсера.
 /// </summary>
 public sealed class AstEvaluator : IAstVisitor
 {
+    private const int MaxCallDepth = 128;
+
     // Стек значений вычисляемого выражения.
     private readonly Stack<long> _stack = new();
 
     // Окружение, через которое программа вводит и выводит данные.
     private readonly IEnvironment _environment;
+
+    private Dictionary<string, FunctionDeclaration> _functions = new(StringComparer.Ordinal);
+    private CallFrame _frame = new();
+    private int _callDepth;
 
     public AstEvaluator(IEnvironment environment)
     {
@@ -32,19 +38,27 @@ public sealed class AstEvaluator : IAstVisitor
 
     public void Visit(ProgramNode node)
     {
-        node.MainFunction.Accept(this);
+        _stack.Clear();
+        _functions = node.Functions.ToDictionary(function => function.Name, StringComparer.Ordinal);
+        FunctionDeclaration main = _functions["main"];
+        CallFunction(main, [], main.NamePosition);
     }
 
     public void Visit(FunctionDeclaration node)
     {
-        node.Body.Accept(this);
+        ExecuteStatements(node.Body);
     }
 
     public void Visit(BlockStatement node)
     {
-        foreach (Statement statement in node.Statements)
+        _frame.EnterBlock();
+        try
         {
-            statement.Accept(this);
+            ExecuteStatements(node);
+        }
+        finally
+        {
+            _frame.LeaveBlock();
         }
     }
 
@@ -53,11 +67,35 @@ public sealed class AstEvaluator : IAstVisitor
         int depth = _stack.Count;
         node.Expression.Accept(this);
 
-        // Значение инструкции отбрасывается; у вызова print_int значения нет, и стек не меняется.
+        // Значение инструкции отбрасывается; вызов процедуры ничего не оставляет на стеке.
         if (_stack.Count > depth)
         {
             _ = _stack.Pop();
         }
+    }
+
+    public void Visit(VariableDeclarationStatement node)
+    {
+        node.Initializer.Accept(this);
+        _frame.Declare(node.Name, _stack.Pop());
+    }
+
+    public void Visit(AssignmentStatement node)
+    {
+        node.Value.Accept(this);
+        _frame.Assign(node.Name, _stack.Pop());
+    }
+
+    public void Visit(ReturnStatement node)
+    {
+        // Результат остаётся на стеке для выражения в вызывающей функции.
+        node.Value?.Accept(this);
+        _frame.HasReturned = true;
+    }
+
+    public void Visit(VariableExpression node)
+    {
+        _stack.Push(_frame.Read(node.Name));
     }
 
     public void Visit(IntLiteralExpression node)
@@ -83,17 +121,82 @@ public sealed class AstEvaluator : IAstVisitor
 
     public void Visit(CallExpression node)
     {
+        // Вычисляем аргументы в кадре вызывающей функции, строго слева направо.
+        long[] arguments = new long[node.Arguments.Count];
+        for (int i = 0; i < arguments.Length; ++i)
+        {
+            node.Arguments[i].Accept(this);
+            arguments[i] = _stack.Pop();
+        }
+
         switch (node.Callee)
         {
             case BuiltinFunctions.ReadInt:
                 _stack.Push(ReadInt(node.Position));
                 break;
             case BuiltinFunctions.PrintInt:
-                node.Arguments[0].Accept(this);
-                WriteInt(_stack.Pop());
+                WriteInt(arguments[0]);
+                break;
+            case BuiltinFunctions.Abs:
+                if (arguments[0] == long.MinValue)
+                {
+                    throw Error("целочисленное переполнение", node.Position);
+                }
+
+                _stack.Push(Math.Abs(arguments[0]));
+                break;
+            case BuiltinFunctions.Min:
+                _stack.Push(arguments.Min());
+                break;
+            case BuiltinFunctions.Max:
+                _stack.Push(arguments.Max());
                 break;
             default:
-                throw new InvalidOperationException($"Неизвестная функция '{node.Callee}'");
+                if (!_functions.TryGetValue(node.Callee, out FunctionDeclaration? function))
+                {
+                    throw new InvalidOperationException($"Неизвестная функция '{node.Callee}'");
+                }
+
+                CallFunction(function, arguments, node.Position);
+                break;
+        }
+    }
+
+    private void ExecuteStatements(BlockStatement block)
+    {
+        foreach (Statement statement in block.Statements)
+        {
+            statement.Accept(this);
+            if (_frame.HasReturned)
+            {
+                break;
+            }
+        }
+    }
+
+    private void CallFunction(FunctionDeclaration function, long[] arguments, SourcePosition position)
+    {
+        if (_callDepth == MaxCallDepth)
+        {
+            throw Error("превышена глубина вызовов функций", position);
+        }
+
+        CallFrame caller = _frame;
+        _frame = new CallFrame();
+        ++_callDepth;
+        try
+        {
+            for (int i = 0; i < arguments.Length; ++i)
+            {
+                _frame.Declare(function.Parameters[i].Name, arguments[i]);
+            }
+
+            function.Accept(this);
+        }
+        finally
+        {
+            --_callDepth;
+            _frame = caller;
         }
     }
 

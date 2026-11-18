@@ -8,4 +8,12 @@ public static class BuiltinFunctions
 
     /// <summary>Функция вывода целого числа; значения не возвращает.</summary>
     public const string PrintInt = "print_int";
+
+    public const string Abs = "abs";
+
+    public const string Min = "min";
+
+    public const string Max = "max";
+
+    public static bool IsBuiltin(string name) => name is ReadInt or PrintInt or Abs or Min or Max;
 }

@@ -11,6 +11,14 @@ public interface IAstVisitor
 
     void Visit(ExpressionStatement node);
 
+    void Visit(VariableDeclarationStatement node);
+
+    void Visit(AssignmentStatement node);
+
+    void Visit(ReturnStatement node);
+
+    void Visit(VariableExpression node);
+
     void Visit(IntLiteralExpression node);
 
     void Visit(UnaryExpression node);
