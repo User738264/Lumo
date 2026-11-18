@@ -2,7 +2,7 @@ using Lumo.Lexing;
 
 namespace Lumo.Ast;
 
-/// <summary>Вызов функции (правило function_call). Позиция узла — позиция имени функции.</summary>
+/// <summary>Вызов функции (правило call_suffix после имени в primary_expression). Позиция узла — позиция имени функции.</summary>
 public sealed class CallExpression : Expression
 {
     public CallExpression(string callee, IReadOnlyList<Expression> arguments, SourcePosition position)

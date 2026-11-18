@@ -42,6 +42,24 @@ public class ParserErrorTests
         };
     }
 
+    public static TheoryData<string, string, int> FunctionAndStatementErrors()
+    {
+        return new TheoryData<string, string, int>
+        {
+            // Присваивание не выражение: цепочка a = b = 1 недопустима.
+            { "func main() { a = b = 1; }", "Строка 1, столбец 21: ожидается ';', получено '='", 21 },
+
+            // Запятая в конце списка параметров.
+            { "func f(a: int,) {}", "Строка 1, столбец 15: ожидается идентификатор, получено ')'", 15 },
+
+            // Стрелка без типа результата.
+            { "func f() -> {}", "Строка 1, столбец 13: ожидается 'int', получено '{'", 13 },
+
+            // Нет точки с запятой после return.
+            { "func main() { return 1 }", "Строка 1, столбец 24: ожидается ';', получено '}'", 24 },
+        };
+    }
+
     public static TheoryData<string, string, int> CallErrors()
     {
         return new TheoryData<string, string, int>
@@ -87,6 +105,16 @@ public class ParserErrorTests
     [Theory]
     [MemberData(nameof(SyntaxErrors))]
     public void Rejects_syntax_error_in_statement(string source, string expectedMessage, int expectedColumn)
+    {
+        CompilationException error = ParserRunner.Error(source);
+
+        Assert.Equal(expectedMessage, error.Message);
+        Assert.Equal(new SourcePosition(1, expectedColumn), error.Position);
+    }
+
+    [Theory]
+    [MemberData(nameof(FunctionAndStatementErrors))]
+    public void Rejects_broken_function_declaration_and_statement(string source, string expectedMessage, int expectedColumn)
     {
         CompilationException error = ParserRunner.Error(source);
 

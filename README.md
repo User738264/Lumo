@@ -53,6 +53,10 @@ dotnet run --project src/Lumo.Cli -- examples/expressions.lumo
 dotnet run --project src/Lumo.Cli -- tests/Lumo.Cli.AcceptanceTests/Programs/rectangle_area.lumo
 ```
 
+Программа `scopes_and_functions.lumo` в том же каталоге показывает затенение имён, присваивание внешней
+переменной из вложенного блока, `return` из вложенного блока и общее имя у переменной и функции.
+Она не читает ввод и выводит: `20`, `10`, `23`, `1`, `30`, `2`, `23` — по одному числу в строке.
+
 ## Анализ покрытия кода тестами
 
 ```bash

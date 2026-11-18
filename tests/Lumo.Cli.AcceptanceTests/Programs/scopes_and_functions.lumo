@@ -1,0 +1,39 @@
+// Затенение имён, присваивание внешней переменной из вложенного блока,
+// return из вложенного блока и общее имя у переменной и функции.
+
+// Параметры и локальные переменные вызова не видны другим функциям.
+// Во вложенном блоке имя sum затеняет внешнее, а return выходит из всей функции.
+func clamp_sum(a: int, b: int, limit: int) -> int {
+    var sum: int = a + b;
+    {
+        var sum: int = min(sum, limit);
+        return sum;
+    }
+}
+
+func report(label: int, value: int) {
+    print_int(label);
+    print_int(value);
+    return;
+}
+
+func main() {
+    var total: int = 10;
+    var count: int = 3;
+    {
+        // Инициализатор читает внешнюю total (10), новая total (20) скрывает её до конца блока.
+        var total: int = total * 2;
+        // Присваивание выбирает ближайшее видимое объявление: внешнюю count.
+        count = count + total;
+        print_int(total);
+    }
+    print_int(total);
+    print_int(count);
+
+    // Аргументы вычисляются слева направо: 23 + 10 = 33, ограничено сверху числом 30.
+    report(1, clamp_sum(count, total, 30));
+
+    // Имена переменных и функций находятся в разных пространствах.
+    var report: int = max(total, count, 7);
+    report(2, report);
+}

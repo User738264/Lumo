@@ -24,6 +24,9 @@ public class ParserProgramTests
             // Несколько инструкций сохраняют порядок записи.
             { "func main() { 1; print_int(2); read_int(); }", "func main { 1; (call print_int 2); (call read_int); }" },
 
+            // Круглые скобки вокруг цели присваивания допустимы и в дереве не остаются.
+            { "func main() { var x: int = 1; (x) = 5; ((x)) = 6; }", "func main { var x = 1; x = 5; x = 6; }" },
+
             // Комментарии и переводы строк в дерево не попадают.
             { "/* начало */ func main() {\n  1 + 2; // сумма\n}", "func main { (+ 1 2); }" },
         };

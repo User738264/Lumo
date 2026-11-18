@@ -161,6 +161,8 @@ public sealed class AstEvaluator : IAstVisitor
                 case BuiltinFunctions.Max:
                     _stack.Push(arguments.Max());
                     break;
+                default:
+                    throw new InvalidOperationException($"Вычислитель не поддерживает встроенную функцию '{builtin.Name}'");
             }
         }
         else if (_functions.TryGetValue(node.Callee, out FunctionDeclaration? function))
