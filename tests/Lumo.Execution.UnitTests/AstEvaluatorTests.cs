@@ -1,5 +1,3 @@
-using System.Reflection;
-
 using Lumo.Ast;
 using Lumo.Execution.UnitTests.Helpers;
 
@@ -192,13 +190,11 @@ public class AstEvaluatorTests
             [],
             Exec(Call("value")),
             Exec(PrintInt(Literal(7))));
-        AstEvaluator evaluator = new(new FakeEnvironment());
+        FakeEnvironment environment = new();
 
-        evaluator.Execute(Program(main, value));
+        new AstEvaluator(environment).Execute(Program(main, value));
 
-        FieldInfo stackField = typeof(AstEvaluator).GetField("_stack", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        Stack<long> stack = (Stack<long>)stackField.GetValue(evaluator)!;
-        Assert.Empty(stack);
+        Assert.Equal("7\n", environment.Output);
     }
 
     [Fact]

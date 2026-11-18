@@ -100,6 +100,7 @@ public class VariableFunctionTests
     [InlineData("func f() { max(); }", "хотя бы один аргумент")]
     [InlineData("func f() { abs(1, 2); }", "функция abs ожидает аргументов: 1")]
     [InlineData("func f() { 1 + 2 = 5; }", "слева от '='")]
+    [InlineData("func f() { var a: int = 1; var b: int = 2; a = b = 1; }", "ожидается ';', получено '='")]
     public void Invalid_declarations_are_rejected_even_if_the_function_is_not_called(string declaration, string message)
     {
         CliResult result = CliRunner.RunProgram("func main() { print_int(7); }\n" + declaration, "");
@@ -107,6 +108,16 @@ public class VariableFunctionTests
         Assert.Equal(1, result.ExitCode);
         Assert.Empty(result.Output);
         Assert.Contains(message, result.Error);
+    }
+
+    [Fact]
+    public void Assignment_target_may_be_parenthesized()
+    {
+        const string source = """
+            func main() { var x: int = 1; (x) = 5; print_int(x); }
+            """;
+
+        Assert.Equal(new CliResult(0, "5\n", ""), CliRunner.RunProgram(source, ""));
     }
 
     [Fact]
