@@ -6,6 +6,57 @@ namespace Lumo.Cli.AcceptanceTests;
 
 public class VariableFunctionTests
 {
+    public static TheoryData<string, string> NumericBuiltinCalls()
+    {
+        return new TheoryData<string, string>
+        {
+            { "min(9)", "9\n" },
+            { "max(-2)", "-2\n" },
+            { "max(-9, -7, -4, -12, -5)", "-4\n" },
+            { "min(11, -4, 0, 8, 9)", "-4\n" },
+            { "abs(-8)", "8\n" },
+        };
+    }
+
+    public static TheoryData<string, string> InvalidDeclarations()
+    {
+        return new TheoryData<string, string>
+        {
+            { "func f() { var x: int; }", "ожидается '='" },
+            { "func f() { var x = 3; }", "ожидается ':'" },
+            { "func f() { var x: string = 3; }", "ожидается 'int'" },
+            { "func f() { var x: int = x + 1; }", "неизвестная переменная 'x'" },
+            { "func f() { x = 5; }", "неизвестная переменная 'x'" },
+            { "func f() { { var x: int = 1; } print_int(x); }", "неизвестная переменная 'x'" },
+            { "func f() { var x: int = 1; var x: int = 2; }", "повторное объявление 'x'" },
+            { "func f(x: int) { var x: int = 2; }", "повторное объявление 'x'" },
+            { "func f(x: int, x: int) {}", "повторное объявление 'x'" },
+            { "func f() {} func f() {}", "повторное объявление функции 'f'" },
+            { "func max() {}", "встроенной функции 'max'" },
+            { "func f() -> int {}", "нет возврата значения" },
+            { "func f() -> int { return; }", "ожидается возвращаемое значение" },
+            { "func f() { return 1; }", "не возвращает значение" },
+            { "func f() {} func g() { var x: int = f(); }", "f не возвращает значение" },
+            { "func f() {} func g() -> int { return f(); }", "f не возвращает значение" },
+            { "func f() {} func g() { max(f(), 1); }", "f не возвращает значение" },
+            { "func f(a: int) {} func g() { f(); }", "функция f ожидает аргументов: 1" },
+            { "func f() { min(); }", "хотя бы один аргумент" },
+            { "func f() { max(); }", "хотя бы один аргумент" },
+            { "func f() { abs(1, 2); }", "функция abs ожидает аргументов: 1" },
+            { "func f() { 1 + 2 = 5; }", "слева от '='" },
+            { "func f() { var a: int = 1; var b: int = 2; a = b = 1; }", "ожидается ';', получено '='" },
+        };
+    }
+
+    public static TheoryData<string> InvalidEntryPoints()
+    {
+        return new TheoryData<string>
+        {
+            "func main(x: int) {}",
+            "func main() -> int { return 0; }",
+        };
+    }
+
     [Fact]
     public void Arguments_are_evaluated_once_from_left_to_right_in_the_caller()
     {
@@ -65,11 +116,7 @@ public class VariableFunctionTests
     }
 
     [Theory]
-    [InlineData("min(9)", "9\n")]
-    [InlineData("max(-2)", "-2\n")]
-    [InlineData("max(-9, -7, -4, -12, -5)", "-4\n")]
-    [InlineData("min(11, -4, 0, 8, 9)", "-4\n")]
-    [InlineData("abs(-8)", "8\n")]
+    [MemberData(nameof(NumericBuiltinCalls))]
     public void Numeric_builtins_return_integers(string expression, string expected)
     {
         CliResult result = CliRunner.RunProgram("func main() { print_int(" + expression + "); }", "");
@@ -78,29 +125,7 @@ public class VariableFunctionTests
     }
 
     [Theory]
-    [InlineData("func f() { var x: int; }", "ожидается '='")]
-    [InlineData("func f() { var x = 3; }", "ожидается ':'")]
-    [InlineData("func f() { var x: string = 3; }", "ожидается 'int'")]
-    [InlineData("func f() { var x: int = x + 1; }", "неизвестная переменная 'x'")]
-    [InlineData("func f() { x = 5; }", "неизвестная переменная 'x'")]
-    [InlineData("func f() { { var x: int = 1; } print_int(x); }", "неизвестная переменная 'x'")]
-    [InlineData("func f() { var x: int = 1; var x: int = 2; }", "повторное объявление 'x'")]
-    [InlineData("func f(x: int) { var x: int = 2; }", "повторное объявление 'x'")]
-    [InlineData("func f(x: int, x: int) {}", "повторное объявление 'x'")]
-    [InlineData("func f() {} func f() {}", "повторное объявление функции 'f'")]
-    [InlineData("func max() {}", "встроенной функции 'max'")]
-    [InlineData("func f() -> int {}", "нет возврата значения")]
-    [InlineData("func f() -> int { return; }", "ожидается возвращаемое значение")]
-    [InlineData("func f() { return 1; }", "не возвращает значение")]
-    [InlineData("func f() {} func g() { var x: int = f(); }", "f не возвращает значение")]
-    [InlineData("func f() {} func g() -> int { return f(); }", "f не возвращает значение")]
-    [InlineData("func f() {} func g() { max(f(), 1); }", "f не возвращает значение")]
-    [InlineData("func f(a: int) {} func g() { f(); }", "функция f ожидает аргументов: 1")]
-    [InlineData("func f() { min(); }", "хотя бы один аргумент")]
-    [InlineData("func f() { max(); }", "хотя бы один аргумент")]
-    [InlineData("func f() { abs(1, 2); }", "функция abs ожидает аргументов: 1")]
-    [InlineData("func f() { 1 + 2 = 5; }", "слева от '='")]
-    [InlineData("func f() { var a: int = 1; var b: int = 2; a = b = 1; }", "ожидается ';', получено '='")]
+    [MemberData(nameof(InvalidDeclarations))]
     public void Invalid_declarations_are_rejected_even_if_the_function_is_not_called(string declaration, string message)
     {
         CliResult result = CliRunner.RunProgram("func main() { print_int(7); }\n" + declaration, "");
@@ -143,8 +168,7 @@ public class VariableFunctionTests
     }
 
     [Theory]
-    [InlineData("func main(x: int) {}")]
-    [InlineData("func main() -> int { return 0; }")]
+    [MemberData(nameof(InvalidEntryPoints))]
     public void Entry_point_has_no_parameters_or_result(string source)
     {
         CliResult result = CliRunner.RunProgram(source, "");

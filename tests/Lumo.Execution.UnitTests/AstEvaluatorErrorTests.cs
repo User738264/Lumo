@@ -104,7 +104,7 @@ public class AstEvaluatorErrorTests
     public void Reports_call_depth_limit_for_recursive_function()
     {
         FunctionDeclaration loop = Function("loop", false, [], Exec(Call("loop")));
-        FunctionDeclaration main = Function("main", false, [], Exec(Call("loop")));
+        FunctionDeclaration main = Function(EntryPoint.Name, false, [], Exec(Call("loop")));
         ProgramNode program = Program(main, loop);
 
         RuntimeErrorException error = Assert.Throws<RuntimeErrorException>(

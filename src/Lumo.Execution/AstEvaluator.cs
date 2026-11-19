@@ -44,7 +44,7 @@ public sealed class AstEvaluator : IAstVisitor
     {
         _stack.Clear();
         _functions = node.Functions.ToDictionary(function => function.Name, StringComparer.Ordinal);
-        FunctionDeclaration main = _functions["main"];
+        FunctionDeclaration main = _functions[EntryPoint.Name];
         CallFunction(main, [], main.NamePosition);
     }
 

@@ -98,6 +98,6 @@ public static class AstFactory
     // Собирает программу из функции main с указанными инструкциями.
     public static ProgramNode ProgramOf(params Statement[] statements)
     {
-        return Program(Function("main", false, [], statements));
+        return Program(Function(EntryPoint.Name, false, [], statements));
     }
 }

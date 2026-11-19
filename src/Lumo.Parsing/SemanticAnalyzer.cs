@@ -30,15 +30,15 @@ public sealed class SemanticAnalyzer : IAstVisitor
             }
         }
 
-        if (!_functions.TryGetValue("main", out FunctionDeclaration? main))
+        if (!_functions.TryGetValue(EntryPoint.Name, out FunctionDeclaration? main))
         {
             SourcePosition position = program.Functions.Count > 0 ? program.Functions[0].NamePosition : program.Position;
-            throw new CompilationException("ожидается функция main", position);
+            throw new CompilationException($"ожидается функция {EntryPoint.Name}", position);
         }
 
         if (main.Parameters.Count != 0 || main.ReturnsValue)
         {
-            throw new CompilationException("точка входа должна иметь вид func main()", main.NamePosition);
+            throw new CompilationException($"точка входа должна иметь вид func {EntryPoint.Name}()", main.NamePosition);
         }
 
         program.Accept(this);
@@ -201,9 +201,9 @@ public sealed class SemanticAnalyzer : IAstVisitor
     {
         int count = call.Arguments.Count;
         bool returnsValue;
-        if (call.Callee == "main")
+        if (call.Callee == EntryPoint.Name)
         {
-            throw new CompilationException("точку входа main нельзя вызывать явно", call.Position);
+            throw new CompilationException($"точку входа {EntryPoint.Name} нельзя вызывать явно", call.Position);
         }
 
         if (BuiltinFunctions.TryGet(call.Callee, out BuiltinFunctionDescriptor descriptor))

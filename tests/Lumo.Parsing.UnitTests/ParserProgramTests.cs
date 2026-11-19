@@ -65,8 +65,8 @@ public class ParserProgramTests
     {
         ProgramNode program = ParserRunner.Parse("func main() { 1; 2; }");
 
-        FunctionDeclaration main = program.Functions.Single(function => function.Name == "main");
-        Assert.Equal("main", main.Name);
+        FunctionDeclaration main = program.Functions.Single(function => function.Name == EntryPoint.Name);
+        Assert.Equal(EntryPoint.Name, main.Name);
         Assert.Equal(2, main.Body.Statements.Count);
     }
 
@@ -75,7 +75,7 @@ public class ParserProgramTests
     {
         ProgramNode program = ParserRunner.Parse("func main() {\n  1 + 2;\n}");
 
-        FunctionDeclaration function = program.Functions.Single(function => function.Name == "main");
+        FunctionDeclaration function = program.Functions.Single(function => function.Name == EntryPoint.Name);
         Statement statement = Assert.Single(function.Body.Statements);
         Assert.Equal(new SourcePosition(1, 1), program.Position);
         Assert.Equal(new SourcePosition(1, 1), function.Position);
@@ -89,7 +89,7 @@ public class ParserProgramTests
         ProgramNode program = ParserRunner.Parse("func main() {\n  -1 + read_int();\n}");
 
         ExpressionStatement statement = Assert.IsType<ExpressionStatement>(
-            Assert.Single(program.Functions.Single(function => function.Name == "main").Body.Statements));
+            Assert.Single(program.Functions.Single(function => function.Name == EntryPoint.Name).Body.Statements));
         BinaryExpression sum = Assert.IsType<BinaryExpression>(statement.Expression);
         UnaryExpression negation = Assert.IsType<UnaryExpression>(sum.Left);
         IntLiteralExpression one = Assert.IsType<IntLiteralExpression>(negation.Operand);

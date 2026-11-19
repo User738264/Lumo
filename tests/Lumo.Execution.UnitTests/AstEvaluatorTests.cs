@@ -168,7 +168,7 @@ public class AstEvaluatorTests
             Declare("copy", Variable("value")),
             Exec(PrintInt(Variable("copy"))));
         FunctionDeclaration main = Function(
-            "main",
+            EntryPoint.Name,
             false,
             [],
             Exec(Call("display", Literal(1))),
@@ -185,7 +185,7 @@ public class AstEvaluatorTests
     {
         FunctionDeclaration value = Function("value", true, [], Return(Literal(42)));
         FunctionDeclaration main = Function(
-            "main",
+            EntryPoint.Name,
             false,
             [],
             Exec(Call("value")),
@@ -206,7 +206,7 @@ public class AstEvaluatorTests
             [],
             Block(Return(Literal(42))),
             Exec(PrintInt(Literal(0))));
-        FunctionDeclaration main = Function("main", false, [], Exec(PrintInt(Call("value"))));
+        FunctionDeclaration main = Function(EntryPoint.Name, false, [], Exec(PrintInt(Call("value"))));
         ProgramNode program = Program(main, value);
         FakeEnvironment environment = new();
 

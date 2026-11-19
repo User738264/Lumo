@@ -21,7 +21,7 @@ public static class ParserRunner
     {
         ProgramNode program = Parse("func main() { " + expression + "; }");
         ExpressionStatement statement = Assert.IsType<ExpressionStatement>(
-            Assert.Single(program.Functions.Single(function => function.Name == "main").Body.Statements));
+            Assert.Single(program.Functions.Single(function => function.Name == EntryPoint.Name).Body.Statements));
         return AstPrinter.Print(statement.Expression);
     }
 
